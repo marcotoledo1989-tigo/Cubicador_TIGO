@@ -26,11 +26,12 @@
         
         /* Panel Izquierdo: Formulario */
         .left-pane { flex: 1; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 15px; }
-        /* Panel Derecho: Tabla de Detalles */
-        .right-pane { flex: 1; display: flex; flex-direction: column; background: var(--card-bg); border: 1px solid #D1D5DB; border-radius: 6px; padding: 15px; }
+        /* Panel Derecho: Dos Tablas de Detalles */
+        .right-pane { flex: 1; display: flex; flex-direction: column; background: var(--card-bg); border: 1px solid #D1D5DB; border-radius: 6px; padding: 15px; gap: 15px; overflow-y: auto; }
 
         .card { background: var(--card-bg); border: 1px solid #D1D5DB; border-radius: 6px; padding: 15px; }
         .card-title { font-size: 14px; font-weight: bold; color: var(--tigo-blue); margin-bottom: 12px; border-bottom: 2px solid var(--bg-color); padding-bottom: 5px; }
+        .table-title { font-size: 13px; font-weight: bold; color: var(--tigo-light-blue); margin-bottom: 6px; display: flex; justify-content: space-between; }
 
         .radio-group { display: flex; gap: 25px; margin-bottom: 5px; font-weight: bold; }
         .radio-group label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
@@ -43,15 +44,16 @@
         .input-qty:disabled { background-color: #E5E7EB; color: #9CA3AF; cursor: not-allowed; }
 
         /* Estilos Tabla de Resultados */
-        .table-container { flex: 1; overflow-y: auto; border: 1px solid #E5E7EB; border-radius: 4px; margin-bottom: 10px; }
+        .table-container { border: 1px solid #E5E7EB; border-radius: 4px; max-height: 250px; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th { background-color: var(--tigo-blue); color: white; position: sticky; top: 0; padding: 8px; text-align: left; font-weight: bold; }
         td { padding: 8px; border-bottom: 1px solid #E5E7EB; vertical-align: middle; }
         tr:nth-child(even) { background-color: #F9FAFB; }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
+        .empty-row { text-align: center; color: #9CA3AF; padding: 20px !important; }
 
-        /* Footer Barra Inferior */
+        /* Footer Barra Inferior y Bloque de Totales */
         footer { background: white; border-top: 1px solid #D1D5DB; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); }
         .btn-group { display: flex; gap: 15px; }
         button { font-size: 14px; font-weight: bold; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
@@ -60,12 +62,16 @@
         .btn-excel { background-color: #107C41; }
         .btn-excel:hover { background-color: #0A5C30; }
         button:disabled { background-color: #9CA3AF; cursor: not-allowed; }
-        .total-display { font-size: 16px; font-weight: bold; color: var(--tigo-blue); }
+        
+        /* Cuadro de Desglose Solicitado */
+        .totals-box { border-left: 3px solid var(--tigo-blue); padding-left: 15px; font-size: 13px; display: flex; flex-direction: column; gap: 3px; min-width: 260px; }
+        .totals-line { display: flex; justify-content: space-between; color: #4B5563; }
+        .totals-line.grand-total { font-size: 16px; font-weight: bold; color: var(--tigo-blue); border-top: 1px dashed #D1D5DB; margin-top: 4px; padding-top: 4px; }
 
         @media (max-width: 900px) {
             .main-container { flex-direction: column; overflow: visible; }
             .left-pane, .right-pane { flex: none; width: 100%; }
-            .right-pane { height: 400px; }
+            .right-pane { height: auto; overflow-y: visible; }
         }
     </style>
 </head>
@@ -108,26 +114,51 @@
         </div>
 
         <div class="right-pane">
-            <div class="card-title" style="border:none; margin-bottom:8px;">DESGLOSE DETALLADO DE CUBICACIÓN</div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 15%">Código</th>
-                            <th style="width: 40%">Descripción</th>
-                            <th style="width: 15%">Tipo</th>
-                            <th style="width: 10%" class="text-right">Cant.</th>
-                            <th style="width: 8%" class="text-center">Und</th>
-                            <th style="width: 12%" class="text-right">Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-cuerpo">
-                        <tr>
-                            <td colspan="6" style="text-align:center; color:#9CA3AF; padding:20px;">No se han calculado ítems aún.</td>
-                        </tr>
-                    </tbody>
-                </table>
+            
+            <div>
+                <div class="table-title">
+                    <span>📋 DETALLE: MANO DE OBRA E INGENIERÍA</span>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 15%">Código</th>
+                                <th style="width: 45%">Descripción</th>
+                                <th style="width: 12%" class="text-right">Cant.</th>
+                                <th style="width: 10%" class="text-center">Und</th>
+                                <th style="width: 18%" class="text-right">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-mo-cuerpo">
+                            <tr><td colspan="5" class="empty-row">No se han calculado ítems de mano de obra o ingeniería aún.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
+            <div>
+                <div class="table-title">
+                    <span>📦 DETALLE: MATERIALES Y SUMINISTROS</span>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 15%">Código</th>
+                                <th style="width: 45%">Descripción</th>
+                                <th style="width: 12%" class="text-right">Cant.</th>
+                                <th style="width: 10%" class="text-center">Und</th>
+                                <th style="width: 18%" class="text-right">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-mat-cuerpo">
+                            <tr><td colspan="5" class="empty-row">No se han calculado ítems de materiales aún.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -136,11 +167,17 @@
             <button class="btn-calc" onclick="calcularTotales()">📊 Calcular Cubicación</button>
             <button class="btn-excel" id="btnExcel" disabled onclick="exportarExcel()">📁 Exportar a Excel</button>
         </div>
-        <div class="total-display" id="txtTotalGral">TOTAL GENERAL: $ 0 CLP</div>
+        
+        <div class="totals-box">
+            <div class="totals-line"><span>Total Ingeniería:</span><strong id="lbl-tot-ing">$ 0</strong></div>
+            <div class="totals-line"><span>Total Mano de obra:</span><strong id="lbl-tot-mo">$ 0</strong></div>
+            <div class="totals-line"><span>Total Materiales:</span><strong id="lbl-tot-mat">$ 0</strong></div>
+            <div class="totals-line grand-total" id="txtTotalGral">TOTAL GENERAL: $ 0 CLP</div>
+        </div>
     </footer>
 
     <script>
-        // Base de Datos Oficial SIGO
+        // Base de Datos Oficial SIGO (Se mantienen todos tus cambios intactos)
         const INGENIERIAS = [
             {cod: "D013-CUFH", descripcion: "Diseño P2P en red de Fibra óptica para Servicios Privados (Empresas, Negocios y Mayoristas)", unidad: "CU", precio_unid: 499749.64},
             {cod: "D033-CUFH", descripcion: "Diseño de conectividad red FO para despliegue Urbano Subterráneo (CAP, CAS, CAC, Intercentral)", unidad: "MT", precio_unid: 336.37},
@@ -219,7 +256,6 @@
                 {cod: "C192", descripcion: "CRUC.FE EXTRA LARGA A.T.", unidad: "CU", precio: 29431},
                 {cod: "C189", descripcion: "CRUC.REMATE AT", unidad: "CU", precio: 16099},
                 {cod: "H572", descripcion: "EXTENSION DE CRUCETA (ARO) MAS PERNOTUERCA", unidad: "CU", precio: 2777.2}
-        
             ],
             "CANALIZADA": [
                 {cod: "H486", descripcion: "KIT ACCESO NUEVO CABLE TODAS MUFAS FOSC", unidad: "CU", precio: 6016.00},
@@ -234,7 +270,7 @@
 
         let itemsCubicados = [];
 
-        // Generar filas dinámicamente
+        // Generar filas dinámicamente manteniendo tu lógica exacta
         function crearFilas(lista, containerId, prefijo, esCable = false) {
             const container = document.getElementById(containerId);
             container.innerHTML = "";
@@ -284,22 +320,33 @@
 
         function calcularTotales() {
             itemsCubicados = [];
+            let totalIngenieria = 0;
+            let totalManoObra = 0;
+            let totalMateriales = 0;
             let totalGeneral = 0;
+            
             const redSel = document.querySelector('input[name="tipo_red"]:checked').value;
 
-            // Auxiliar para evaluar inputs
-            const procesarSeccion = (lista, claseInputs, esPrecioUnid = true) => {
+            // Auxiliar para evaluar inputs manteniendo intacta tu lógica original de acumulación
+            const procesarSeccion = (lista, claseInputs, tipoGrupo, esPrecioUnid = true) => {
                 lista.forEach(item => {
                     const inp = document.getElementById(`input-${item.cod}`);
                     if (inp && inp.value && parseFloat(inp.value) > 0) {
                         const cant = parseFloat(inp.value);
                         const precio = esPrecioUnid ? item.precio_unid : item.precio;
                         const tot = cant * precio;
+                        
+                        // Clasificación de acumuladores inferiores
+                        if (tipoGrupo === "ING") totalIngenieria += tot;
+                        else if (tipoGrupo === "MO") totalManoObra += tot;
+                        else if (tipoGrupo === "MAT") totalMateriales += tot;
+
                         totalGeneral += tot;
                         itemsCubicados.push({
                             cod: item.cod,
                             desc: item.descripcion,
                             tipo: claseInputs.toUpperCase(),
+                            grupo: tipoGrupo,
                             cant: cant,
                             und: item.unidad,
                             p_u: precio,
@@ -309,37 +356,64 @@
                 });
             };
 
-            procesarSeccion(INGENIERIAS, "Ingeniería", true);
-            procesarSeccion(CABLES[redSel], `Cable FO ${redSel}`, false);
-            procesarSeccion(MANO_OBRA[redSel], `Mano de Obra ${redSel}`, true);
-            procesarSeccion(ACCESORIOS[redSel], `Materiales ${redSel}`, false);
+            procesarSeccion(INGENIERIAS, "Ingeniería", "ING", true);
+            procesarSeccion(CABLES[redSel], `Cable FO ${redSel}`, "MAT", false);
+            procesarSeccion(MANO_OBRA[redSel], `Mano de Obra ${redSel}`, "MO", true);
+            procesarSeccion(ACCESORIOS[redSel], `Materiales ${redSel}`, "MAT", false);
 
-            // Actualizar Tabla de Visualización
-            const tbody = document.getElementById("tabla-cuerpo");
-            tbody.innerHTML = "";
+            // Obtener cuerpos de ambas tablas
+            const tbodyMo = document.getElementById("tabla-mo-cuerpo");
+            const tbodyMat = document.getElementById("tabla-mat-cuerpo");
+            
+            tbodyMo.innerHTML = "";
+            tbodyMat.innerHTML = "";
 
             if (itemsCubicados.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#9CA3AF; padding:20px;">No se han ingresado cantidades.</td></tr>`;
+                tbodyMo.innerHTML = `<tr><td colspan="5" class="empty-row">No se han ingresado cantidades.</td></tr>`;
+                tbodyMat.innerHTML = `<tr><td colspan="5" class="empty-row">No se han ingresado cantidades.</td></tr>`;
                 document.getElementById("btnExcel").disabled = true;
+                
+                document.getElementById("lbl-tot-ing").innerText = "$ 0";
+                document.getElementById("lbl-tot-mo").innerText = "$ 0";
+                document.getElementById("lbl-tot-mat").innerText = "$ 0";
                 document.getElementById("txtTotalGral").innerText = "TOTAL GENERAL: $ 0 CLP";
+                
                 alert("Por favor, ingresa al menos una cantidad válida.");
                 return;
             }
+
+            let contMo = 0, contMat = 0;
 
             itemsCubicados.forEach(it => {
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
                     <td><strong>${it.cod}</strong></td>
                     <td>${it.desc}</td>
-                    <td>${it.tipo}</td>
                     <td class="text-right">${it.cant.toLocaleString("es-CL", {minimumFractionDigits: 1, maximumFractionDigits: 2})}</td>
                     <td class="text-center">${it.und}</td>
                     <td class="text-right">${formatearMoneda(it.tot)}</td>
                 `;
-                tbody.appendChild(tr);
+                
+                // Distribución limpia entre las dos tablas a la derecha
+                if (it.grupo === "ING" || it.grupo === "MO") {
+                    tbodyMo.appendChild(tr);
+                    contMo++;
+                } else {
+                    tbodyMat.appendChild(tr);
+                    contMat++;
+                }
             });
 
+            // Mensajes por defecto si una de las tablas queda vacía
+            if (contMo === 0) tbodyMo.innerHTML = `<tr><td colspan="5" class="empty-row">No hay registros de mano de obra o ingeniería.</td></tr>`;
+            if (contMat === 0) tbodyMat.innerHTML = `<tr><td colspan="5" class="empty-row">No hay registros de materiales o suministros.</td></tr>`;
+
+            // Actualización del Cuadro de Totales Inferior
+            document.getElementById("lbl-tot-ing").innerText = formatearMoneda(totalIngenieria);
+            document.getElementById("lbl-tot-mo").innerText = formatearMoneda(totalManoObra);
+            document.getElementById("lbl-tot-mat").innerText = formatearMoneda(totalMateriales);
             document.getElementById("txtTotalGral").innerText = `TOTAL GENERAL: ${formatearMoneda(totalGeneral)} CLP`;
+            
             document.getElementById("btnExcel").disabled = false;
         }
 
@@ -348,26 +422,26 @@
 
             const wb = XLSX.utils.book_new();
             
-            // Estructurar filas para SheetJS
+            // Estructurar filas para SheetJS manteniendo tu formato exacto de salida
             const dataReporte = [
                 ["CUBICADOR TIGO — RESUMEN SIGO WEB"],
+                [],
+                ["RESUMEN ECONÓMICO"],
+                ["Total Ingeniería", "", "", "", "", "", document.getElementById("lbl-tot-ing").innerText],
+                ["Total Mano de Obra", "", "", "", "", "", document.getElementById("lbl-tot-mo").innerText],
+                ["Total Materiales", "", "", "", "", "", document.getElementById("lbl-tot-mat").innerText],
+                ["TOTAL GENERAL CUBICACIÓN", "", "", "", "", "", document.getElementById("txtTotalGral").innerText],
                 [],
                 ["Código", "Descripción", "Tipo Actividad", "Cantidad", "Unidad", "P. Unitario", "Total (CLP)"]
             ];
 
-            let sumaTotal = 0;
             itemsCubicados.forEach(it => {
                 dataReporte.push([it.cod, it.desc, it.tipo, it.cant, it.und, Math.round(it.p_u), Math.round(it.tot)]);
-                sumaTotal += it.tot;
             });
-
-            dataReporte.push([]);
-            dataReporte.push(["", "", "", "", "", "TOTAL GENERAL:", Math.round(sumaTotal)]);
 
             const ws = XLSX.utils.aoa_to_sheet(dataReporte);
             XLSX.utils.book_append_sheet(wb, ws, "Cubicación");
 
-            // Descargar el archivo de forma nativa en el navegador
             const fecha = new Date().toISOString().slice(0,10).replace(/-/g,"");
             XLSX.writeFile(wb, `Cubicacion_TIGO_Web_${fecha}.xlsx`);
         }
@@ -376,5 +450,6 @@
         window.onload = cambiarRed;
     </script>
 </body>
-</html
+</html>
+
     
