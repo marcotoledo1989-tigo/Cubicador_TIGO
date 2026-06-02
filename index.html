@@ -26,11 +26,13 @@
         
         /* Panel Izquierdo: Formulario */
         .left-pane { flex: 1; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 15px; }
-        /* Panel Derecho: Tabla de Detalles */
-        .right-pane { flex: 1; display: flex; flex-direction: column; background: var(--card-bg); border: 1px solid #D1D5DB; border-radius: 6px; padding: 15px; }
+        
+        /* Panel Derecho: Tablas de Detalles */
+        .right-pane { flex: 1; display: flex; flex-direction: column; background: var(--card-bg); border: 1px solid #D1D5DB; border-radius: 6px; padding: 15px; gap: 15px; overflow-y: auto; }
 
         .card { background: var(--card-bg); border: 1px solid #D1D5DB; border-radius: 6px; padding: 15px; }
         .card-title { font-size: 14px; font-weight: bold; color: var(--tigo-blue); margin-bottom: 12px; border-bottom: 2px solid var(--bg-color); padding-bottom: 5px; }
+        .table-title { font-size: 13px; font-weight: bold; color: var(--tigo-light-blue); margin-bottom: 6px; display: flex; justify-content: space-between; }
 
         .radio-group { display: flex; gap: 25px; margin-bottom: 5px; font-weight: bold; }
         .radio-group label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
@@ -42,38 +44,43 @@
         .input-qty { width: 85px; padding: 5px; text-align: right; border: 1px solid #CCCCCC; border-radius: 4px; font-size: 13px; }
         .input-qty:disabled { background-color: #E5E7EB; color: #9CA3AF; cursor: not-allowed; }
 
-        /* Estilos Tabla de Resultados */
-        .table-container { flex: 1; overflow-y: auto; border: 1px solid #E5E7EB; border-radius: 4px; margin-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background-color: var(--tigo-blue); color: white; position: sticky; top: 0; padding: 8px; text-align: left; font-weight: bold; }
-        td { padding: 8px; border-bottom: 1px solid #E5E7EB; vertical-align: middle; }
+        /* Estilos Tablas de Resultados */
+        .table-container { border: 1px solid #E5E7EB; border-radius: 4px; margin-bottom: 5px; max-height: 240px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { background-color: var(--tigo-blue); color: white; position: sticky; top: 0; padding: 6px 8px; text-align: left; font-weight: bold; }
+        td { padding: 6px 8px; border-bottom: 1px solid #E5E7EB; vertical-align: middle; }
         tr:nth-child(even) { background-color: #F9FAFB; }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
+        .empty-row { text-align: center; color: #9CA3AF; padding: 15px !important; }
 
-        /* Footer Barra Inferior */
-        footer { background: white; border-top: 1px solid #D1D5DB; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); }
-        .btn-group { display: flex; gap: 15px; }
+        /* Footer Barra Inferior y Bloque de Totales */
+        footer { background: white; border-top: 1px solid #D1D5DB; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); }
+        .btn-group { display: flex; gap: 15px; align-items: center; }
         button { font-size: 14px; font-weight: bold; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
         .btn-calc { background-color: var(--tigo-light-blue); }
         .btn-calc:hover { background-color: #005691; }
         .btn-excel { background-color: #107C41; }
         .btn-excel:hover { background-color: #0A5C30; }
         button:disabled { background-color: #9CA3AF; cursor: not-allowed; }
-        .total-display { font-size: 16px; font-weight: bold; color: var(--tigo-blue); }
+
+        /* Cuadro de Desglose de Totales Finales */
+        .totals-box { border-left: 3px solid var(--tigo-blue); padding-left: 15px; font-size: 13px; color: #4B5563; display: flex; flex-direction: column; gap: 3px; min-width: 260px; }
+        .totals-line { display: flex; justify-content: space-between; }
+        .totals-line.grand-total { font-size: 16px; font-weight: bold; color: var(--tigo-blue); border-top: 1px dashed #D1D5DB; margin-top: 4px; padding-top: 4px; }
 
         @media (max-width: 900px) {
             .main-container { flex-direction: column; overflow: visible; }
             .left-pane, .right-pane { flex: none; width: 100%; }
-            .right-pane { height: 400px; }
+            .right-pane { height: auto; overflow-y: visible; }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>CUBICADOR INGENIERIA — TIGO</h1>
-        <p>Mano de Obra y Unidades de Obra | Valores Sistema SIGO Web</p>
+        <h1>CUBICADOR DE UNIDADES DE OBRA — TIGO</h1>
+        <p>Mano de Obra y Tendido de Fibra Óptica | Valores Sistema SIGO Web</p>
     </header>
 
     <div class="main-container">
@@ -108,26 +115,53 @@
         </div>
 
         <div class="right-pane">
-            <div class="card-title" style="border:none; margin-bottom:8px;">DESGLOSE DETALLADO DE CUBICACIÓN</div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 15%">Código</th>
-                            <th style="width: 40%">Descripción</th>
-                            <th style="width: 15%">Tipo</th>
-                            <th style="width: 10%" class="text-right">Cant.</th>
-                            <th style="width: 8%" class="text-center">Und</th>
-                            <th style="width: 12%" class="text-right">Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-cuerpo">
-                        <tr>
-                            <td colspan="6" style="text-align:center; color:#9CA3AF; padding:20px;">No se han calculado ítems aún.</td>
-                        </tr>
-                    </tbody>
-                </table>
+            
+            <div>
+                <div class="table-title">
+                    <span>📋 DETALLE: MANO DE OBRA E INGENIERÍA</span>
+                    <span id="subtotal-mo-txt" style="color: var(--tigo-blue)">Subtotal: $ 0</span>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 15%">Código</th>
+                                <th style="width: 45%">Descripción</th>
+                                <th style="width: 12%" class="text-right">Cant.</th>
+                                <th style="width: 10%" class="text-center">Und</th>
+                                <th style="width: 18%" class="text-right">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-mo-cuerpo">
+                            <tr><td colspan="5" class="empty-row">No hay registros de mano de obra.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
+            <div>
+                <div class="table-title">
+                    <span>📦 DETALLE: MATERIALES Y SUMINISTROS</span>
+                    <span id="subtotal-mat-txt" style="color: var(--tigo-blue)">Subtotal: $ 0</span>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 15%">Código</th>
+                                <th style="width: 45%">Descripción</th>
+                                <th style="width: 12%" class="text-right">Cant.</th>
+                                <th style="width: 10%" class="text-center">Und</th>
+                                <th style="width: 18%" class="text-right">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-mat-cuerpo">
+                            <tr><td colspan="5" class="empty-row">No hay registros de materiales.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -136,15 +170,20 @@
             <button class="btn-calc" onclick="calcularTotales()">📊 Calcular Cubicación</button>
             <button class="btn-excel" id="btnExcel" disabled onclick="exportarExcel()">📁 Exportar a Excel</button>
         </div>
-        <div class="total-display" id="txtTotalGral">TOTAL GENERAL: $ 0 CLP</div>
+        
+        <div class="totals-box">
+            <div class="totals-line"><span>Total Ingeniería:</span><strong id="lbl-tot-ing">$ 0</strong></div>
+            <div class="totals-line"><span>Total Mano de obra:</span><strong id="lbl-tot-mo">$ 0</strong></div>
+            <div class="totals-line"><span>Total Materiales:</span><strong id="lbl-tot-mat">$ 0</strong></div>
+            <div class="totals-line grand-total"><span>TOTAL GENERAL:</span><span id="lbl-tot-gral">$ 0 CLP</span></div>
+        </div>
     </footer>
 
     <script>
         // Base de Datos Oficial SIGO
         const INGENIERIAS = [
             {cod: "D013-CUFH", descripcion: "Diseño P2P en red de Fibra óptica para Servicios Privados (Empresas, Negocios y Mayoristas)", unidad: "CU", precio_unid: 499749.64},
-            {cod: "D033-CUFH", descripcion: "Diseño de conectividad red FO para despliegue Urbano Subterráneo (CAP, CAS, CAC, Intercentral)", unidad: "MT", precio_unid: 336.37},
-            {cod: "D022-CUFH", descripcion: "Diseño de Red para Proyectos Zona Cobertura Garantizada (F.O.)", unidad: "CU", precio_unid: 290719.74}
+            {cod: "D033-CUFH", descripcion: "Diseño de conectividad red FO para despliegue Urbano Subterráneo (CAP, CAS, CAC, Intercentral)", unidad: "MT", precio_unid: 336.37}
         ];
 
         const CABLES = {
@@ -183,9 +222,7 @@
                 {cod: "R454-CUFH", descripcion: "Lubricación sistema contratapa a tapa cámara", unidad: "CU", precio_unid: 16818.73},
                 {cod: "R209-CUFH", descripcion: "Soldado o desoldado de tapas de Cámaras", unidad: "CU", precio_unid: 10335.53},
                 {cod: "R257-CUFH", descripcion: "Apertura, ventilación y cierre de cámaras", unidad: "CU", precio_unid: 2818.78},
-                {cod: "J659-CUFH", descripcion: "Medida alta de abonado en F.O. Monomodo", unidad: "CF", precio_unid: 8860.10},
-                {cod: "J021-CUFH", descripcion: "Instalar cruceta de madera o metálica", unidad: "CU", precio_unid: 4835.6},
-                {cod: "J926-CUFH", descripcion: "Normalizar apoyosa", unidad: "CU", precio_unid: 2901.4}
+                {cod: "J659-CUFH", descripcion: "Medida alta de abonado en F.O. Monomodo", unidad: "CF", precio_unid: 8860.10}
             ],
             "CANALIZADA": [
                 {cod: "J753-CUFH", descripcion: "Instalar cables de fibras ópticas en canalización (todo tipo)", unidad: "MT", precio_unid: 553.76},
@@ -214,12 +251,7 @@
                 {cod: "H100", descripcion: "TARJETA IDENTIFICACIÓN F.O.", unidad: "CU", precio: 733.00},
                 {cod: "C999", descripcion: "AMARRA PLÁSTICA 30 CMS", unidad: "CU", precio: 27.00},
                 {cod: "R428", descripcion: "PERNO DE SEGURIDAD TECNEG TIPO CTC", unidad: "CU", precio: 50629.00},
-                {cod: "R285", descripcion: "SOLDADO TAPAS DE CÁMARA", unidad: "CU", precio: 955.50},
-                {cod: "C190", descripcion: "CRUC.ESPECIAL DE B.T.", unidad: "CU", precio: 10986},
-                {cod: "C192", descripcion: "CRUC.FE EXTRA LARGA A.T.", unidad: "CU", precio: 29431},
-                {cod: "C189", descripcion: "CRUC.REMATE AT", unidad: "CU", precio: 16099},
-                {cod: "H572", descripcion: "EXTENSION DE CRUCETA (ARO) MAS PERNOTUERCA", unidad: "CU", precio: 2777.2}
-        
+                {cod: "R285", descripcion: "SOLDADO TAPAS DE CÁMARA", unidad: "CU", precio: 955.50}
             ],
             "CANALIZADA": [
                 {cod: "H486", descripcion: "KIT ACCESO NUEVO CABLE TODAS MUFAS FOSC", unidad: "CU", precio: 6016.00},
@@ -232,9 +264,12 @@
             ]
         };
 
-        let itemsCubicados = [];
+        let itemsManoObra = [];
+        let itemsMateriales = [];
+        let numIngenieria = 0;
+        let numManoObra = 0;
+        let numMateriales = 0;
 
-        // Generar filas dinámicamente
         function crearFilas(lista, containerId, prefijo, esCable = false) {
             const container = document.getElementById(containerId);
             container.innerHTML = "";
@@ -262,7 +297,6 @@
             crearFilas(ACCESORIOS[redSel], "wrapper-accesorios", "acc");
         }
 
-        // Lógica de exclusividad (máximo un cable seleccionado)
         function evaluarExclusividad(inputModificado, claseDiccionario) {
             const inputs = document.querySelectorAll(`.${claseDiccionario}`);
             const valor = inputModificado.value.trim();
@@ -283,96 +317,136 @@
         }
 
         function calcularTotales() {
-            itemsCubicados = [];
-            let totalGeneral = 0;
+            itemsManoObra = [];
+            itemsMateriales = [];
+            numIngenieria = 0;
+            numManoObra = 0;
+            numMateriales = 0;
+
             const redSel = document.querySelector('input[name="tipo_red"]:checked').value;
 
-            // Auxiliar para evaluar inputs
-            const procesarSeccion = (lista, claseInputs, esPrecioUnid = true) => {
-                lista.forEach(item => {
-                    const inp = document.getElementById(`input-${item.cod}`);
-                    if (inp && inp.value && parseFloat(inp.value) > 0) {
-                        const cant = parseFloat(inp.value);
-                        const precio = esPrecioUnid ? item.precio_unid : item.precio;
-                        const tot = cant * precio;
-                        totalGeneral += tot;
-                        itemsCubicados.push({
-                            cod: item.cod,
-                            desc: item.descripcion,
-                            tipo: claseInputs.toUpperCase(),
-                            cant: cant,
-                            und: item.unidad,
-                            p_u: precio,
-                            tot: tot
-                        });
-                    }
-                });
-            };
-
-            procesarSeccion(INGENIERIAS, "Ingeniería", true);
-            procesarSeccion(CABLES[redSel], `Cable FO ${redSel}`, false);
-            procesarSeccion(MANO_OBRA[redSel], `Mano de Obra ${redSel}`, true);
-            procesarSeccion(ACCESORIOS[redSel], `Materiales ${redSel}`, false);
-
-            // Actualizar Tabla de Visualización
-            const tbody = document.getElementById("tabla-cuerpo");
-            tbody.innerHTML = "";
-
-            if (itemsCubicados.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#9CA3AF; padding:20px;">No se han ingresado cantidades.</td></tr>`;
-                document.getElementById("btnExcel").disabled = true;
-                document.getElementById("txtTotalGral").innerText = "TOTAL GENERAL: $ 0 CLP";
-                alert("Por favor, ingresa al menos una cantidad válida.");
-                return;
-            }
-
-            itemsCubicados.forEach(it => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td><strong>${it.cod}</strong></td>
-                    <td>${it.desc}</td>
-                    <td>${it.tipo}</td>
-                    <td class="text-right">${it.cant.toLocaleString("es-CL", {minimumFractionDigits: 1, maximumFractionDigits: 2})}</td>
-                    <td class="text-center">${it.und}</td>
-                    <td class="text-right">${formatearMoneda(it.tot)}</td>
-                `;
-                tbody.appendChild(tr);
+            // 1. Procesar Ingeniería (Va a la tabla de Mano de Obra)
+            INGENIERIAS.forEach(item => {
+                const inp = document.getElementById(`input-${item.cod}`);
+                if (inp && inp.value && parseFloat(inp.value) > 0) {
+                    const cant = parseFloat(inp.value);
+                    const tot = cant * item.precio_unid;
+                    numIngenieria += tot;
+                    itemsManoObra.push({ cod: item.cod, desc: item.descripcion, cant: cant, und: item.unidad, tot: tot, p_u: item.precio_unid });
+                }
             });
 
-            document.getElementById("txtTotalGral").innerText = `TOTAL GENERAL: ${formatearMoneda(totalGeneral)} CLP`;
-            document.getElementById("btnExcel").disabled = false;
+            // 2. Procesar Mano de Obra
+            MANO_OBRA[redSel].forEach(item => {
+                const inp = document.getElementById(`input-${item.cod}`);
+                if (inp && inp.value && parseFloat(inp.value) > 0) {
+                    const cant = parseFloat(inp.value);
+                    const tot = cant * item.precio_unid;
+                    numManoObra += tot;
+                    itemsManoObra.push({ cod: item.cod, desc: item.descripcion, cant: cant, und: item.unidad, tot: tot, p_u: item.precio_unid });
+                }
+            });
+
+            // 3. Procesar Cables (Va a la tabla de Materiales)
+            CABLES[redSel].forEach(item => {
+                const inp = document.getElementById(`input-${item.cod}`);
+                if (inp && inp.value && parseFloat(inp.value) > 0) {
+                    const cant = parseFloat(inp.value);
+                    const tot = cant * item.precio;
+                    numMateriales += tot;
+                    itemsMateriales.push({ cod: item.cod, desc: item.descripcion, cant: cant, und: item.unidad, tot: tot, p_u: item.precio });
+                }
+            });
+
+            // 4. Procesar Accesorios (Va a la tabla de Materiales)
+            ACCESORIOS[redSel].forEach(item => {
+                const inp = document.getElementById(`input-${item.cod}`);
+                if (inp && inp.value && parseFloat(inp.value) > 0) {
+                    const cant = parseFloat(inp.value);
+                    const tot = cant * item.precio;
+                    numMateriales += tot;
+                    itemsMateriales.push({ cod: item.cod, desc: item.descripcion, cant: cant, und: item.unidad, tot: tot, p_u: item.precio });
+                }
+            });
+
+            // --- REDIBUJAR TABLA 1: MANO DE OBRA ---
+            const tbodyMo = document.getElementById("tabla-mo-cuerpo");
+            tbodyMo.innerHTML = "";
+            if(itemsManoObra.length === 0) {
+                tbodyMo.innerHTML = `<tr><td colspan="5" class="empty-row">No hay registros de mano de obra.</td></tr>`;
+            } else {
+                itemsManoObra.forEach(it => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `<td><strong>${it.cod}</strong></td><td>${it.desc}</td><td class="text-right">${it.cant.toLocaleString("es-CL")}</td><td class="text-center">${it.und}</td><td class="text-right">${formatearMoneda(it.tot)}</td>`;
+                    tbodyMo.appendChild(tr);
+                });
+            }
+
+            // --- REDIBUJAR TABLA 2: MATERIALES ---
+            const tbodyMat = document.getElementById("tabla-mat-cuerpo");
+            tbodyMat.innerHTML = "";
+            if(itemsMateriales.length === 0) {
+                tbodyMat.innerHTML = `<tr><td colspan="5" class="empty-row">No hay registros de materiales.</td></tr>`;
+            } else {
+                itemsMateriales.forEach(it => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `<td><strong>${it.cod}</strong></td><td>${it.desc}</td><td class="text-right">${it.cant.toLocaleString("es-CL")}</td><td class="text-center">${it.und}</td><td class="text-right">${formatearMoneda(it.tot)}</td>`;
+                    tbodyMat.appendChild(tr);
+                });
+            }
+
+            // --- ACTUALIZAR ETIQUETAS DE SUB-TOTALES POR TABLA ---
+            document.getElementById("subtotal-mo-txt").innerText = "Subtotal: " + formatearMoneda(numIngenieria + numManoObra);
+            document.getElementById("subtotal-mat-txt").innerText = "Subtotal: " + formatearMoneda(numMateriales);
+
+            // --- ACTUALIZAR CUADRO DE DESGLOSE INFERIOR ---
+            document.getElementById("lbl-tot-ing").innerText = formatearMoneda(numIngenieria);
+            document.getElementById("lbl-tot-mo").innerText = formatearMoneda(numManoObra);
+            document.getElementById("lbl-tot-mat").innerText = formatearMoneda(numMateriales);
+            
+            const granTotal = numIngenieria + numManoObra + numMateriales;
+            document.getElementById("lbl-tot-gral").innerText = formatearMoneda(granTotal) + " CLP";
+
+            // Activar botón de Excel si hay algún dato
+            document.getElementById("btnExcel").disabled = (granTotal === 0);
+            if(granTotal === 0) alert("Por favor, ingresa al menos una cantidad válida.");
         }
 
         function exportarExcel() {
-            if (itemsCubicados.length === 0) return;
+            const granTotal = numIngenieria + numManoObra + numMateriales;
+            if (granTotal === 0) return;
 
             const wb = XLSX.utils.book_new();
-            
-            // Estructurar filas para SheetJS
             const dataReporte = [
-                ["CUBICADOR TIGO — RESUMEN SIGO WEB"],
+                ["CUBICADOR TIGO — RESUMEN SIGO ESTRUCUTURADO"],
                 [],
-                ["Código", "Descripción", "Tipo Actividad", "Cantidad", "Unidad", "P. Unitario", "Total (CLP)"]
+                ["RESUMEN DE COSTOS"],
+                ["Total Ingeniería", "", "", "", "", "", Math.round(numIngenieria)],
+                ["Total Mano de Obra", "", "", "", "", "", Math.round(numManoObra)],
+                ["Total Materiales", "", "", "", "", "", Math.round(numMateriales)],
+                ["TOTAL GENERAL", "", "", "", "", "", Math.round(granTotal)],
+                [],
+                ["DETALLE DE ÍTEMS CUBICADOS"],
+                ["Código", "Descripción", "Grupo Baremo", "Cantidad", "Unidad", "P. Unitario", "Total (CLP)"]
             ];
 
-            let sumaTotal = 0;
-            itemsCubicados.forEach(it => {
-                dataReporte.push([it.cod, it.desc, it.tipo, it.cant, it.und, Math.round(it.p_u), Math.round(it.tot)]);
-                sumaTotal += it.tot;
+            // Añadir ítems de Mano de Obra / Ingeniería al reporte
+            itemsManoObra.forEach(it => {
+                dataReporte.push([it.cod, it.desc, "MANO DE OBRA / ING", it.cant, it.und, Math.round(it.p_u), Math.round(it.tot)]);
             });
 
-            dataReporte.push([]);
-            dataReporte.push(["", "", "", "", "", "TOTAL GENERAL:", Math.round(sumaTotal)]);
+            // Añadir ítems de Materiales al reporte
+            itemsMateriales.forEach(it => {
+                dataReporte.push([it.cod, it.desc, "MATERIALES / CABLES", it.cant, it.und, Math.round(it.p_u), Math.round(it.tot)]);
+            });
 
             const ws = XLSX.utils.aoa_to_sheet(dataReporte);
-            XLSX.utils.book_append_sheet(wb, ws, "Cubicación");
+            XLSX.utils.book_append_sheet(wb, ws, "Presupuesto TIGO");
 
-            // Descargar el archivo de forma nativa en el navegador
             const fecha = new Date().toISOString().slice(0,10).replace(/-/g,"");
-            XLSX.writeFile(wb, `Cubicacion_TIGO_Web_${fecha}.xlsx`);
+            XLSX.writeFile(wb, `Cubicacion_TIGO_Estructurada_${fecha}.xlsx`);
         }
 
-        // Inicializar la App al cargar
         window.onload = cambiarRed;
     </script>
 </body>
