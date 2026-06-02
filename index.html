@@ -232,12 +232,9 @@
             ]
         };
 
-        let itemsManoObra = [];
-        let itemsMateriales = [];
-        let numIngenieria = 0;
-        let numManoObra = 0;
-        let numMateriales = 0;
+        let itemsCubicados = [];
 
+        // Generar filas dinámicamente
         function crearFilas(lista, containerId, prefijo, esCable = false) {
             const container = document.getElementById(containerId);
             container.innerHTML = "";
@@ -265,6 +262,7 @@
             crearFilas(ACCESORIOS[redSel], "wrapper-accesorios", "acc");
         }
 
+        // Lógica de exclusividad (máximo un cable seleccionado)
         function evaluarExclusividad(inputModificado, claseDiccionario) {
             const inputs = document.querySelectorAll(`.${claseDiccionario}`);
             const valor = inputModificado.value.trim();
@@ -285,137 +283,98 @@
         }
 
         function calcularTotales() {
-            itemsManoObra = [];
-            itemsMateriales = [];
-            numIngenieria = 0;
-            numManoObra = 0;
-            numMateriales = 0;
-
+            itemsCubicados = [];
+            let totalGeneral = 0;
             const redSel = document.querySelector('input[name="tipo_red"]:checked').value;
 
-            // 1. Procesar Ingeniería (Va a la tabla de Mano de Obra)
-            INGENIERIAS.forEach(item => {
-                const inp = document.getElementById(`input-${item.cod}`);
-                if (inp && inp.value && parseFloat(inp.value) > 0) {
-                    const cant = parseFloat(inp.value);
-                    const tot = cant * item.precio_unid;
-                    numIngenieria += tot;
-                    itemsManoObra.push({ cod: item.cod, desc: item.descripcion, cant: cant, und: item.unidad, tot: tot, p_u: item.precio_unid });
-                }
-            });
-
-            // 2. Procesar Mano de Obra
-            MANO_OBRA[redSel].forEach(item => {
-                const inp = document.getElementById(`input-${item.cod}`);
-                if (inp && inp.value && parseFloat(inp.value) > 0) {
-                    const cant = parseFloat(inp.value);
-                    const tot = cant * item.precio_unid;
-                    numManoObra += tot;
-                    itemsManoObra.push({ cod: item.cod, desc: item.descripcion, cant: cant, und: item.unidad, tot: tot, p_u: item.precio_unid });
-                }
-            });
-
-            // 3. Procesar Cables (Va a la tabla de Materiales)
-            CABLES[redSel].forEach(item => {
-                const inp = document.getElementById(`input-${item.cod}`);
-                if (inp && inp.value && parseFloat(inp.value) > 0) {
-                    const cant = parseFloat(inp.value);
-                    const tot = cant * item.precio;
-                    numMateriales += tot;
-                    itemsMateriales.push({ cod: item.cod, desc: item.descripcion, cant: cant, und: item.unidad, tot: tot, p_u: item.precio });
-                }
-            });
-
-            // 4. Procesar Accesorios (Va a la tabla de Materiales)
-            ACCESORIOS[redSel].forEach(item => {
-                const inp = document.getElementById(`input-${item.cod}`);
-                if (inp && inp.value && parseFloat(inp.value) > 0) {
-                    const cant = parseFloat(inp.value);
-                    const tot = cant * item.precio;
-                    numMateriales += tot;
-                    itemsMateriales.push({ cod: item.cod, desc: item.descripcion, cant: cant, und: item.unidad, tot: tot, p_u: item.precio });
-                }
-            });
-
-            // --- REDIBUJAR TABLA 1: MANO DE OBRA ---
-            const tbodyMo = document.getElementById("tabla-mo-cuerpo");
-            tbodyMo.innerHTML = "";
-            if(itemsManoObra.length === 0) {
-                tbodyMo.innerHTML = `<tr><td colspan="5" class="empty-row">No hay registros de mano de obra.</td></tr>`;
-            } else {
-                itemsManoObra.forEach(it => {
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `<td><strong>${it.cod}</strong></td><td>${it.desc}</td><td class="text-right">${it.cant.toLocaleString("es-CL")}</td><td class="text-center">${it.und}</td><td class="text-right">${formatearMoneda(it.tot)}</td>`;
-                    tbodyMo.appendChild(tr);
+            // Auxiliar para evaluar inputs
+            const procesarSeccion = (lista, claseInputs, esPrecioUnid = true) => {
+                lista.forEach(item => {
+                    const inp = document.getElementById(`input-${item.cod}`);
+                    if (inp && inp.value && parseFloat(inp.value) > 0) {
+                        const cant = parseFloat(inp.value);
+                        const precio = esPrecioUnid ? item.precio_unid : item.precio;
+                        const tot = cant * precio;
+                        totalGeneral += tot;
+                        itemsCubicados.push({
+                            cod: item.cod,
+                            desc: item.descripcion,
+                            tipo: claseInputs.toUpperCase(),
+                            cant: cant,
+                            und: item.unidad,
+                            p_u: precio,
+                            tot: tot
+                        });
+                    }
                 });
+            };
+
+            procesarSeccion(INGENIERIAS, "Ingeniería", true);
+            procesarSeccion(CABLES[redSel], `Cable FO ${redSel}`, false);
+            procesarSeccion(MANO_OBRA[redSel], `Mano de Obra ${redSel}`, true);
+            procesarSeccion(ACCESORIOS[redSel], `Materiales ${redSel}`, false);
+
+            // Actualizar Tabla de Visualización
+            const tbody = document.getElementById("tabla-cuerpo");
+            tbody.innerHTML = "";
+
+            if (itemsCubicados.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#9CA3AF; padding:20px;">No se han ingresado cantidades.</td></tr>`;
+                document.getElementById("btnExcel").disabled = true;
+                document.getElementById("txtTotalGral").innerText = "TOTAL GENERAL: $ 0 CLP";
+                alert("Por favor, ingresa al menos una cantidad válida.");
+                return;
             }
 
-            // --- REDIBUJAR TABLA 2: MATERIALES ---
-            const tbodyMat = document.getElementById("tabla-mat-cuerpo");
-            tbodyMat.innerHTML = "";
-            if(itemsMateriales.length === 0) {
-                tbodyMat.innerHTML = `<tr><td colspan="5" class="empty-row">No hay registros de materiales.</td></tr>`;
-            } else {
-                itemsMateriales.forEach(it => {
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `<td><strong>${it.cod}</strong></td><td>${it.desc}</td><td class="text-right">${it.cant.toLocaleString("es-CL")}</td><td class="text-center">${it.und}</td><td class="text-right">${formatearMoneda(it.tot)}</td>`;
-                    tbodyMat.appendChild(tr);
-                });
-            }
+            itemsCubicados.forEach(it => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><strong>${it.cod}</strong></td>
+                    <td>${it.desc}</td>
+                    <td>${it.tipo}</td>
+                    <td class="text-right">${it.cant.toLocaleString("es-CL", {minimumFractionDigits: 1, maximumFractionDigits: 2})}</td>
+                    <td class="text-center">${it.und}</td>
+                    <td class="text-right">${formatearMoneda(it.tot)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
 
-            // --- ACTUALIZAR ETIQUETAS DE SUB-TOTALES POR TABLA ---
-            document.getElementById("subtotal-mo-txt").innerText = "Subtotal: " + formatearMoneda(numIngenieria + numManoObra);
-            document.getElementById("subtotal-mat-txt").innerText = "Subtotal: " + formatearMoneda(numMateriales);
-
-            // --- ACTUALIZAR CUADRO DE DESGLOSE INFERIOR ---
-            document.getElementById("lbl-tot-ing").innerText = formatearMoneda(numIngenieria);
-            document.getElementById("lbl-tot-mo").innerText = formatearMoneda(numManoObra);
-            document.getElementById("lbl-tot-mat").innerText = formatearMoneda(numMateriales);
-            
-            const granTotal = numIngenieria + numManoObra + numMateriales;
-            document.getElementById("lbl-tot-gral").innerText = formatearMoneda(granTotal) + " CLP";
-
-            // Activar botón de Excel si hay algún dato
-            document.getElementById("btnExcel").disabled = (granTotal === 0);
-            if(granTotal === 0) alert("Por favor, ingresa al menos una cantidad válida.");
+            document.getElementById("txtTotalGral").innerText = `TOTAL GENERAL: ${formatearMoneda(totalGeneral)} CLP`;
+            document.getElementById("btnExcel").disabled = false;
         }
 
         function exportarExcel() {
-            const granTotal = numIngenieria + numManoObra + numMateriales;
-            if (granTotal === 0) return;
+            if (itemsCubicados.length === 0) return;
 
             const wb = XLSX.utils.book_new();
+            
+            // Estructurar filas para SheetJS
             const dataReporte = [
-                ["CUBICADOR TIGO — RESUMEN SIGO ESTRUCUTURADO"],
+                ["CUBICADOR TIGO — RESUMEN SIGO WEB"],
                 [],
-                ["RESUMEN DE COSTOS"],
-                ["Total Ingeniería", "", "", "", "", "", Math.round(numIngenieria)],
-                ["Total Mano de Obra", "", "", "", "", "", Math.round(numManoObra)],
-                ["Total Materiales", "", "", "", "", "", Math.round(numMateriales)],
-                ["TOTAL GENERAL", "", "", "", "", "", Math.round(granTotal)],
-                [],
-                ["DETALLE DE ÍTEMS CUBICADOS"],
-                ["Código", "Descripción", "Grupo Baremo", "Cantidad", "Unidad", "P. Unitario", "Total (CLP)"]
+                ["Código", "Descripción", "Tipo Actividad", "Cantidad", "Unidad", "P. Unitario", "Total (CLP)"]
             ];
 
-            // Añadir ítems de Mano de Obra / Ingeniería al reporte
-            itemsManoObra.forEach(it => {
-                dataReporte.push([it.cod, it.desc, "MANO DE OBRA / ING", it.cant, it.und, Math.round(it.p_u), Math.round(it.tot)]);
+            let sumaTotal = 0;
+            itemsCubicados.forEach(it => {
+                dataReporte.push([it.cod, it.desc, it.tipo, it.cant, it.und, Math.round(it.p_u), Math.round(it.tot)]);
+                sumaTotal += it.tot;
             });
 
-            // Añadir ítems de Materiales al reporte
-            itemsMateriales.forEach(it => {
-                dataReporte.push([it.cod, it.desc, "MATERIALES / CABLES", it.cant, it.und, Math.round(it.p_u), Math.round(it.tot)]);
-            });
+            dataReporte.push([]);
+            dataReporte.push(["", "", "", "", "", "TOTAL GENERAL:", Math.round(sumaTotal)]);
 
             const ws = XLSX.utils.aoa_to_sheet(dataReporte);
-            XLSX.utils.book_append_sheet(wb, ws, "Presupuesto TIGO");
+            XLSX.utils.book_append_sheet(wb, ws, "Cubicación");
 
+            // Descargar el archivo de forma nativa en el navegador
             const fecha = new Date().toISOString().slice(0,10).replace(/-/g,"");
-            XLSX.writeFile(wb, `Cubicacion_TIGO_Estructurada_${fecha}.xlsx`);
+            XLSX.writeFile(wb, `Cubicacion_TIGO_Web_${fecha}.xlsx`);
         }
 
+        // Inicializar la App al cargar
         window.onload = cambiarRed;
     </script>
 </body>
-</html>
+</html
+    
