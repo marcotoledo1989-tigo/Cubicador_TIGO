@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cubicador TIGO — Sistema SIGO</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --tigo-blue: #00205B;
+            --tigo-light-blue: #0070C0;
+            --tigo-accent: #FFD700;
+            --bg-color: #F4F6F9;
+            --card-bg: #FFFFFF;
+            --text-color: #333333;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; min-height: 100vh; }
+
+        header { background-color: var(--tigo-blue); color: white; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        header h1 { font-size: 20px; font-weight: bold; letter-spacing: 0.5px; }
+        header p { font-size: 13px; color: var(--tigo-accent); font-style: italic; margin-top: 3px; }
+
+        .main-container { display: flex; flex: 1; padding: 15px; gap: 15px; overflow: hidden; }
+        
+        /* Panel Izquierdo: Formulario */
+        .left-pane { flex: 1; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 15px; }
+        /* Panel Derecho: Tabla de Detalles */
+        .right-pane { flex: 1; display: flex; flex-direction: column; background: var(--card-bg); border: 1px solid #D1D5DB; border-radius: 6px; padding: 15px; }
+
+        .card { background: var(--card-bg); border: 1px solid #D1D5DB; border-radius: 6px; padding: 15px; }
+        .card-title { font-size: 14px; font-weight: bold; color: var(--tigo-blue); margin-bottom: 12px; border-bottom: 2px solid var(--bg-color); padding-bottom: 5px; }
+
+        .radio-group { display: flex; gap: 25px; margin-bottom: 5px; font-weight: bold; }
+        .radio-group label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed #E5E7EB; }
+        .item-row:last-child { border-bottom: none; }
+        .item-info { font-size: 13px; flex: 1; padding-right: 15px; }
+        .item-unit { color: #6B7280; font-size: 11px; font-weight: bold; }
+        .input-qty { width: 85px; padding: 5px; text-align: right; border: 1px solid #CCCCCC; border-radius: 4px; font-size: 13px; }
+        .input-qty:disabled { background-color: #E5E7EB; color: #9CA3AF; cursor: not-allowed; }
+
+        /* Estilos Tabla de Resultados */
+        .table-container { flex: 1; overflow-y: auto; border: 1px solid #E5E7EB; border-radius: 4px; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background-color: var(--tigo-blue); color: white; position: sticky; top: 0; padding: 8px; text-align: left; font-weight: bold; }
+        td { padding: 8px; border-bottom: 1px solid #E5E7EB; vertical-align: middle; }
+        tr:nth-child(even) { background-color: #F9FAFB; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+
+        /* Footer Barra Inferior */
+        footer { background: white; border-top: 1px solid #D1D5DB; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); }
+        .btn-group { display: flex; gap: 15px; }
+        button { font-size: 14px; font-weight: bold; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+        .btn-calc { background-color: var(--tigo-light-blue); }
+        .btn-calc:hover { background-color: #005691; }
+        .btn-excel { background-color: #107C41; }
+        .btn-excel:hover { background-color: #0A5C30; }
+        button:disabled { background-color: #9CA3AF; cursor: not-allowed; }
+        .total-display { font-size: 16px; font-weight: bold; color: var(--tigo-blue); }
+
+        @media (max-width: 900px) {
+            .main-container { flex-direction: column; overflow: visible; }
+            .left-pane, .right-pane { flex: none; width: 100%; }
+            .right-pane { height: 400px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>CUBICADOR DE UNIDADES DE OBRA — TIGO</h1>
+        <p>Mano de Obra y Tendido de Fibra Óptica | Sistema SIGO Web</p>
+    </header>
+
+    <div class="main-container">
+        <div class="left-pane">
+            <div class="card">
+                <div class="card-title">1. TIPO DE RED A CUBICAR</div>
+                <div class="radio-group">
+                    <label><input type="radio" name="tipo_red" value="AÉREA" checked onchange="cambiarRed()"> Red Aérea</label>
+                    <label><input type="radio" name="tipo_red" value="CANALIZADA" onchange="cambiarRed()"> Red Canalizada</label>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">2. INGENIERÍA Y DISEÑO</div>
+                <div id="wrapper-ingenieria"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">3. CALIBRE DE CABLE DE FIBRA ÓPTICA (Máx. 1 selección)</div>
+                <div id="wrapper-cables"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">4. MANO DE OBRA Y CONSTRUCCIÓN</div>
+                <div id="wrapper-mo"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">5. MATERIALES Y ACCESORIOS DE CONECTIVIDAD</div>
+                <div id="wrapper-accesorios"></div>
+            </div>
+        </div>
+
+        <div class="right-pane">
+            <div class="card-title" style="border:none; margin-bottom:8px;">DESGLOSE DETALLADO DE CUBICACIÓN</div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 15%">Código</th>
+                            <th style="width: 40%">Descripción</th>
+                            <th style="width: 15%">Tipo</th>
+                            <th style="width: 10%" class="text-right">Cant.</th>
+                            <th style="width: 8%" class="text-center">Und</th>
+                            <th style="width: 12%" class="text-right">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-cuerpo">
+                        <tr>
+                            <td colspan="6" style="text-align:center; color:#9CA3AF; padding:20px;">No se han calculado ítems aún.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="btn-group">
+            <button class="btn-calc" onclick="calcularTotales()">📊 Calcular Cubicación</button>
+            <button class="btn-excel" id="btnExcel" disabled onclick="exportarExcel()">📁 Exportar a Excel</button>
+        </div>
+        <div class="total-display" id="txtTotalGral">TOTAL GENERAL: $ 0 CLP</div>
+    </footer>
+
+    <script>
+        // Base de Datos Oficial SIGO
+        const INGENIERIAS = [
+            {cod: "D013-CUFH", descripcion: "Diseño P2P en red de Fibra óptica para Servicios Privados (Empresas, Negocios y Mayoristas)", unidad: "CU", precio_unid: 499749.64},
+            {cod: "D033-CUFH", descripcion: "Diseño de conectividad red FO para despliegue Urbano Subterráneo (CAP, CAS, CAC, Intercentral)", unidad: "MT", precio_unid: 336.37}
+        ];
+
+        const CABLES = {
+            "AÉREA": [
+                {cod: "H592", descripcion: "CABLE  8FO/KP", unidad: "MT", precio: 302.40},
+                {cod: "H593", descripcion: "CABLE 16FO/KP", unidad: "MT", precio: 339.20},
+                {cod: "H594", descripcion: "CABLE 32FO/KP", unidad: "MT", precio: 414.40},
+                {cod: "H595", descripcion: "CABLE 64FO/KP", unidad: "MT", precio: 544.00},
+                {cod: "H117", descripcion: "CABLE AEREO  64 F.O. MONO PKP (S/LASHING)", unidad: "MT", precio: 736.00},
+                {cod: "H112", descripcion: "CABLE AEREO 128 F.O. MONO PKP (S/LASHING)", unidad: "MT", precio: 1520.00},
+                {cod: "H120", descripcion: "CABLE AEREO 256 F.O. PKP      (S/LASHING)", unidad: "MT", precio: 2232.00}
+            ],
+            "CANALIZADA": [
+                {cod: "H592", descripcion: "CABLE  8FO/KP", unidad: "MT", precio: 302.40},
+                {cod: "H593", descripcion: "CABLE 16FO/KP", unidad: "MT", precio: 339.20},
+                {cod: "H594", descripcion: "CABLE 32FO/KP", unidad: "MT", precio: 414.40},
+                {cod: "H595", descripcion: "CABLE 64FO/KP", unidad: "MT", precio: 544.00},
+                {cod: "H596", descripcion: "CABLE 96FO/KP", unidad: "MT", precio: 762.40},
+                {cod: "H305", descripcion: "CABLE SUBT 128 F.O. MONO PKP", unidad: "MT", precio: 1520.00},
+                {cod: "H526", descripcion: "CABLE SUBT 256 F.O. PKP", unidad: "MT", precio: 2232.00}
+            ]
+        };
+
+        const MANO_OBRA = {
+            "AÉREA": [
+                {cod: "J760-CUFH", descripcion: "Instalar cable de fibra óptica aéreo con preformados", unidad: "MT", precio_unid: 531.61},
+                {cod: "J756-CUFH", descripcion: "Instalar cable de fibra óptica aéreo con mensajero", unidad: "MT", precio_unid: 886.01},
+                {cod: "J765-CUFH", descripcion: "Manipular cable o elemento de F.O. (emp., term., asoc.)", unidad: "CU", precio_unid: 10853.62},
+                {cod: "J789-CUFH", descripcion: "Empalmar F.O. todo tipo capacidades", unidad: "CU", precio_unid: 886.01},
+                {cod: "J770-CUFH", descripcion: "Preparar tubo/s cable de F.O. (en punta o con sangrado)", unidad: "CU", precio_unid: 1772.02},
+                {cod: "J768-CUFH", descripcion: "Preparar extremos cable de F.O. (en punta o con sangrado)", unidad: "CU", precio_unid: 17720.19},
+                {cod: "J158-CUFH", descripcion: "Instalar amarras plásticas de todo tipo", unidad: "CU", precio_unid: 449.45},
+                {cod: "J402-CUFH", descripcion: "Rotular elemento de empalme, terminación o asociado", unidad: "CU", precio_unid: 1438.24},
+                {cod: "P004-CUFH", descripcion: "Permisos Municipales en áreas remotas de Agencias", unidad: "CU", precio_unid: 77369.28},
+                {cod: "R459-CUFH", descripcion: "Instalación de pernos de seguridad en tapa tipo calzada", unidad: "CU", precio_unid: 46979.70},
+                {cod: "R454-CUFH", descripcion: "Lubricación sistema contratapa a tapa cámara", unidad: "CU", precio_unid: 16818.73},
+                {cod: "R209-CUFH", descripcion: "Soldado o desoldado de tapas de Cámaras", unidad: "CU", precio_unid: 10335.53},
+                {cod: "R257-CUFH", descripcion: "Apertura, ventilación y cierre de cámaras", unidad: "CU", precio_unid: 2818.78},
+                {cod: "J659-CUFH", descripcion: "Medida alta de abonado en F.O. Monomodo", unidad: "CF", precio_unid: 8860.10}
+            ],
+            "CANALIZADA": [
+                {cod: "J753-CUFH", descripcion: "Instalar cables de fibras ópticas en canalización (todo tipo)", unidad: "MT", precio_unid: 553.76},
+                {cod: "J765-CUFH", descripcion: "Manipular cable o elemento de F.O. (emp., term., asoc.)", unidad: "CU", precio_unid: 10853.62},
+                {cod: "J789-CUFH", descripcion: "Empalmar F.O. todo tipo capacidades", unidad: "CU", precio_unid: 886.01},
+                {cod: "J770-CUFH", descripcion: "Preparar tubo/s cable de F.O. (en punta o con sangrado)", unidad: "CU", precio_unid: 1772.02},
+                {cod: "J768-CUFH", descripcion: "Preparar extremos cable de F.O. (en punta o con sangrado)", unidad: "CU", precio_unid: 17720.19},
+                {cod: "R459-CUFH", descripcion: "Instalación de pernos de seguridad en tapa tipo calzada", unidad: "CU", precio_unid: 46979.70},
+                {cod: "R454-CUFH", descripcion: "Lubricación sistema contratapa a tapa cámara", unidad: "CU", precio_unid: 16818.73},
+                {cod: "R209-CUFH", descripcion: "Soldado o desoldado de tapas de Cámaras", unidad: "CU", precio_unid: 10335.53},
+                {cod: "R257-CUFH", descripcion: "Apertura, ventilación y cierre de cámaras", unidad: "CU", precio_unid: 2818.78},
+                {cod: "J659-CUFH", descripcion: "Medida alta de abonado en F.O. Monomodo", unidad: "CF", precio_unid: 8860.10},
+                {cod: "J402-CUFH", descripcion: "Rotular elemento de empalme, terminación o asociado", unidad: "CU", precio_unid: 1438.24},
+                {cod: "P004-CUFH", descripcion: "Permisos Municipales en áreas remotas de Agencias", unidad: "CU", precio_unid: 77369.28}
+            ]
+        };
+
+        const ACCESORIOS = {
+            "AÉREA": [
+                {cod: "H574", descripcion: "PREFORMADO DE PASO AZUL", unidad: "CU", precio: 932.80},
+                {cod: "H566", descripcion: "PREFORMADO RETENCIÓN AZUL", unidad: "CU", precio: 1857.60},
+                {cod: "H486", descripcion: "KIT ACCESO NUEVO CABLE TODAS MUFAS FOSC", unidad: "CU", precio: 6016.00},
+                {cod: "H372", descripcion: "MANGUITOS PROTECTORES EMPALMES FUSIÓN", unidad: "CU", precio: 27.20},
+                {cod: "H387", descripcion: "MUFA FO ALTA CAPACIDAD (EX FOS 400 D5)", unidad: "CU", precio: 68784.00},
+                {cod: "H390", descripcion: "MUFA FO MEDIA CAPACIDAD (EX FOSC 400-B4)", unidad: "CU", precio: 32328.00},
+                {cod: "H100", descripcion: "TARJETA IDENTIFICACIÓN F.O.", unidad: "CU", precio: 733.00},
+                {cod: "C999", descripcion: "AMARRA PLÁSTICA 30 CMS", unidad: "CU", precio: 27.00},
+                {cod: "R428", descripcion: "PERNO DE SEGURIDAD TECNEG TIPO CTC", unidad: "CU", precio: 50629.00},
+                {cod: "R285", descripcion: "SOLDADO TAPAS DE CÁMARA", unidad: "CU", precio: 955.50}
+            ],
+            "CANALIZADA": [
+                {cod: "H486", descripcion: "KIT ACCESO NUEVO CABLE TODAS MUFAS FOSC", unidad: "CU", precio: 6016.00},
+                {cod: "H372", descripcion: "MANGUITOS PROTECTORES EMPALMES FUSIÓN", unidad: "CU", precio: 27.20},
+                {cod: "H387", descripcion: "MUFA FO ALTA CAPACIDAD (EX FOS 400 D5)", unidad: "CU", precio: 68784.00},
+                {cod: "H390", descripcion: "MUFA FO MEDIA CAPACIDAD (EX FOSC 400-B4)", unidad: "CU", precio: 32328.00},
+                {cod: "H100", descripcion: "TARJETA IDENTIFICACIÓN F.O.", unidad: "CU", precio: 733.00},
+                {cod: "R428", descripcion: "PERNO DE SEGURIDAD TECNEG TIPO CTC", unidad: "CU", precio: 50629.00},
+                {cod: "R285", descripcion: "SOLDADO TAPAS DE CÁMARA", unidad: "CU", precio: 955.50}
+            ]
+        };
+
+        let itemsCubicados = [];
+
+        // Generar filas dinámicamente
+        function crearFilas(lista, containerId, prefijo, esCable = false) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = "";
+            lista.forEach(item => {
+                const row = document.createElement("div");
+                row.className = "item-row";
+                row.innerHTML = `
+                    <div class="item-info">
+                        <strong>${item.cod}</strong> - ${item.descripcion} 
+                        <span class="item-unit">(${item.unidad})</span>
+                    </div>
+                    <input type="number" step="any" min="0" class="input-qty jq-${prefijo}" 
+                           data-cod="${item.cod}" id="input-${item.cod}" placeholder="0"
+                           oninput="${esCable ? `evaluarExclusividad(this, 'jq-${prefijo}')` : ''}">
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function cambiarRed() {
+            const redSel = document.querySelector('input[name="tipo_red"]:checked').value;
+            crearFilas(INGENIERIAS, "wrapper-ingenieria", "ing");
+            crearFilas(CABLES[redSel], "wrapper-cables", "cab", true);
+            crearFilas(MANO_OBRA[redSel], "wrapper-mo", "mo");
+            crearFilas(ACCESORIOS[redSel], "wrapper-accesorios", "acc");
+        }
+
+        // Lógica de exclusividad (máximo un cable seleccionado)
+        function evaluarExclusividad(inputModificado, claseDiccionario) {
+            const inputs = document.querySelectorAll(`.${claseDiccionario}`);
+            const valor = inputModificado.value.trim();
+            if (valor && parseFloat(valor) > 0) {
+                inputs.forEach(inp => {
+                    if (inp !== inputModificado) {
+                        inp.value = "";
+                        inp.disabled = true;
+                    }
+                });
+            } else {
+                inputs.forEach(inp => inp.disabled = false);
+            }
+        }
+
+        function formatearMoneda(valor) {
+            return "$ " + Math.round(valor).toLocaleString("es-CL");
+        }
+
+        function calcularTotales() {
+            itemsCubicados = [];
+            let totalGeneral = 0;
+            const redSel = document.querySelector('input[name="tipo_red"]:checked').value;
+
+            // Auxiliar para evaluar inputs
+            const procesarSeccion = (lista, claseInputs, esPrecioUnid = true) => {
+                lista.forEach(item => {
+                    const inp = document.getElementById(`input-${item.cod}`);
+                    if (inp && inp.value && parseFloat(inp.value) > 0) {
+                        const cant = parseFloat(inp.value);
+                        const precio = esPrecioUnid ? item.precio_unid : item.precio;
+                        const tot = cant * precio;
+                        totalGeneral += tot;
+                        itemsCubicados.push({
+                            cod: item.cod,
+                            desc: item.descripcion,
+                            tipo: claseInputs.toUpperCase(),
+                            cant: cant,
+                            und: item.unidad,
+                            p_u: precio,
+                            tot: tot
+                        });
+                    }
+                });
+            };
+
+            procesarSeccion(INGENIERIAS, "Ingeniería", true);
+            procesarSeccion(CABLES[redSel], `Cable FO ${redSel}`, false);
+            procesarSeccion(MANO_OBRA[redSel], `Mano de Obra ${redSel}`, true);
+            procesarSeccion(ACCESORIOS[redSel], `Materiales ${redSel}`, false);
+
+            // Actualizar Tabla de Visualización
+            const tbody = document.getElementById("tabla-cuerpo");
+            tbody.innerHTML = "";
+
+            if (itemsCubicados.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#9CA3AF; padding:20px;">No se han ingresado cantidades.</td></tr>`;
+                document.getElementById("btnExcel").disabled = true;
+                document.getElementById("txtTotalGral").innerText = "TOTAL GENERAL: $ 0 CLP";
+                alert("Por favor, ingresa al menos una cantidad válida.");
+                return;
+            }
+
+            itemsCubicados.forEach(it => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><strong>${it.cod}</strong></td>
+                    <td>${it.desc}</td>
+                    <td>${it.tipo}</td>
+                    <td class="text-right">${it.cant.toLocaleString("es-CL", {minimumFractionDigits: 1, maximumFractionDigits: 2})}</td>
+                    <td class="text-center">${it.und}</td>
+                    <td class="text-right">${formatearMoneda(it.tot)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById("txtTotalGral").innerText = `TOTAL GENERAL: ${formatearMoneda(totalGeneral)} CLP`;
+            document.getElementById("btnExcel").disabled = false;
+        }
+
+        function exportarExcel() {
+            if (itemsCubicados.length === 0) return;
+
+            const wb = XLSX.utils.book_new();
+            
+            // Estructurar filas para SheetJS
+            const dataReporte = [
+                ["CUBICADOR TIGO — RESUMEN SIGO WEB"],
+                [],
+                ["Código", "Descripción", "Tipo Actividad", "Cantidad", "Unidad", "P. Unitario", "Total (CLP)"]
+            ];
+
+            let sumaTotal = 0;
+            itemsCubicados.forEach(it => {
+                dataReporte.push([it.cod, it.desc, it.tipo, it.cant, it.und, Math.round(it.p_u), Math.round(it.tot)]);
+                sumaTotal += it.tot;
+            });
+
+            dataReporte.push([]);
+            dataReporte.push(["", "", "", "", "", "TOTAL GENERAL:", Math.round(sumaTotal)]);
+
+            const ws = XLSX.utils.aoa_to_sheet(dataReporte);
+            XLSX.utils.book_append_sheet(wb, ws, "Cubicación");
+
+            // Descargar el archivo de forma nativa en el navegador
+            const fecha = new Date().toISOString().slice(0,10).replace(/-/g,"");
+            XLSX.writeFile(wb, `Cubicacion_TIGO_Web_${fecha}.xlsx`);
+        }
+
+        // Inicializar la App al cargar
+        window.onload = cambiarRed;
+    </script>
+</body>
+</html>
